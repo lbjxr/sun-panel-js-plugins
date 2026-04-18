@@ -99,7 +99,32 @@
     }
 
     ${SunPanelTOCDomStyleId} #toc-sidebar .toc-sidebar-box {
-        width: 500px;
+        width: 200px;
+        margin-top: 56px;
+    }
+
+    ${SunPanelTOCDomStyleId} .toc-toggle-btn {
+        position: absolute;
+        top: 16px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 999px;
+        background: rgb(255 255 255 / 14%);
+        color: #fff;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 3;
+        font-size: 18px;
+        line-height: 1;
+        backdrop-filter: blur(2px);
+    }
+
+    ${SunPanelTOCDomStyleId} .toc-toggle-btn:hover {
+        background: rgb(255 255 255 / 22%);
     }
 
     ${SunPanelTOCDomStyleId} .title-bar-box {
@@ -165,6 +190,13 @@
     const sidebar = document.createElement('div')
     sidebar.id = 'toc-sidebar'
 
+    const tocToggleBtn = document.createElement('button')
+    tocToggleBtn.type = 'button'
+    tocToggleBtn.className = 'toc-toggle-btn'
+    tocToggleBtn.setAttribute('aria-label', '收起目录')
+    tocToggleBtn.textContent = '‹'
+    sidebar.appendChild(tocToggleBtn)
+
     const sidebarBox = document.createElement('div')
     sidebarBox.className = 'toc-sidebar-box'
 
@@ -206,18 +238,33 @@
     // 将侧边栏添加到页面中
     SunPanelTOCDom.appendChild(sidebar)
 
+    let mobileSidebarOpen = false
+
+    function syncToggleButton() {
+      if (isMobile() && mobileSidebarOpen) {
+        tocToggleBtn.style.display = 'flex'
+      }
+      else {
+        tocToggleBtn.style.display = 'none'
+      }
+    }
+
     function mobileHideSidebar() {
+      mobileSidebarOpen = false
       sidebar.classList.remove('toc-sidebar-expansion')
       sidebar.classList.add('hidden')
+      syncToggleButton()
     }
 
     function hideSidebar() {
       sidebar.classList.remove('toc-sidebar-expansion')
+      syncToggleButton()
     }
 
     function showSidebar() {
       sidebar.classList.add('toc-sidebar-expansion')
       sidebar.classList.remove('hidden')
+      syncToggleButton()
     }
 
     // ----------------
@@ -236,12 +283,22 @@
     function handleResize() {
       if (isMobile()) {
         tocMobileBtn.classList.remove('hidden')
-        sidebar.classList.add('hidden')
+        if (mobileSidebarOpen) {
+          sidebar.classList.remove('hidden')
+          sidebar.classList.add('toc-sidebar-expansion')
+        }
+        else {
+          sidebar.classList.add('hidden')
+          sidebar.classList.remove('toc-sidebar-expansion')
+        }
       }
       else {
+        mobileSidebarOpen = false
         tocMobileBtn.classList.add('hidden')
         sidebar.classList.remove('hidden')
+        sidebar.classList.remove('toc-sidebar-expansion')
       }
+      syncToggleButton()
     }
 
     // 使用防抖函数包装你的处理函数
@@ -260,22 +317,23 @@
     // 监听移动端按钮点击
     tocMobileBtn.addEventListener('click', () => {
       if (sidebar.classList.contains('toc-sidebar-expansion')) {
-        // 隐藏
         mobileHideSidebar()
       }
       else {
-        // 显示
+        mobileSidebarOpen = true
         showSidebar()
       }
     })
 
+    // 侧栏内按钮：仅移动端显示，用来直接收起
+    tocToggleBtn.addEventListener('click', (event) => {
+      event.stopPropagation()
+      mobileHideSidebar()
+    })
+
     // 监听TOC栏失去hover
     sidebar.addEventListener('mouseleave', () => {
-      if (isMobile()) {
-        // 隐藏
-        mobileHideSidebar()
-      }
-      else {
+      if (!isMobile()) {
         hideSidebar()
       }
     })
